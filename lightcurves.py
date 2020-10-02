@@ -3,6 +3,9 @@
 Created on Tue Sep 29 09:34:29 2020
 
 @author: roder
+
+CODE ADAPTED FROM EXISTING CODE BY DR. TIMOTHY A. LIVENGOOD
+COPIED COMMENTS/CODE IS NOT EXPLICITELY REFERENCED
 """
 
 import pandas as pd # to save the data
@@ -92,7 +95,7 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
     plt.figure()
     idx = 0
     for i in wavelengths:
-        filepath = r'./output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
+        filepath = r'../output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
         epoxi_data_filter = pd.read_pickle(filepath)
         epoxi_data_filter = update_signal(epoxi_data_filter)
         epoxi_data_filter['signal'] = scale_to_range(epoxi_data_filter)

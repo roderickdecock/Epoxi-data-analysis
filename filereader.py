@@ -3,6 +3,9 @@
 Created on Mon Aug 31 09:45:01 2020
 
 @author: roder
+
+CODE ADAPTED FROM EXISTING CODE BY DR. TIMOTHY A. LIVENGOOD
+COPIED COMMENTS/CODE IS NOT EXPLICITELY REFERENCED
 """
 #### IDL first index column, 2nd row  Python first index row, end column
 #### IDL slicing includes the last number: 1:3 includes index 3. Python does not
@@ -201,7 +204,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
     # MAIN
     ### Get filepath of all fit files and access all files one by one
     # * causes it to access every file within the folder
-    for filepath in glob.iglob(r'../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/'+folder+'/'+year+'/'+observations+'/*.fit'): #### manually change this and the save at the bottom
+    for filepath in glob.iglob(r'../../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/'+folder+'/'+year+'/'+observations+'/*.fit'): #### manually change this and the save at the bottom
     # for filepath in glob.iglob(r'./verification/*.fit'): ### verification
     #for filepath in glob.iglob(r'../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/rad/2008/078/*.fit'):   
         print(filepath)
@@ -534,7 +537,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
 
    
 #%% VERIFICATION
-    fits_inf = fits.open("./verification/veri_circle_30.0_radius.fit")
+    fits_inf = fits.open("../verification/veri_circle_30.0_radius.fit")
     data = fits_inf[0].data
     veri_weight = np.ones((512,512))
     veri_centroid = centroid_func(data,veri_weight)
@@ -542,7 +545,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
     fits_inf.close()  
     #%%
-    fits_inf = fits.open("./verification/veri_circle_60.0_radius.fit")
+    fits_inf = fits.open("../verification/veri_circle_60.0_radius.fit")
     data = fits_inf[0].data
     veri_weight = np.ones((512,512))
     veri_centroid = centroid_func(data,veri_weight)
@@ -551,7 +554,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     fits_inf.close()  
     
     #%%
-    fits_inf = fits.open("./verification/veri_circle_60.0_radius_signal_strength_10.0.fit")
+    fits_inf = fits.open("../verification/veri_circle_60.0_radius_signal_strength_10.0.fit")
     data = fits_inf[0].data
     veri_weight = np.ones((512,512))
     veri_centroid = centroid_func(data,veri_weight)

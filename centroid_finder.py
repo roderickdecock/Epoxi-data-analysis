@@ -3,6 +3,9 @@
 Created on Tue Sep  8 16:33:46 2020
 
 @author: roder
+
+CODE ADAPTED FROM EXISTING CODE BY DR. TIMOTHY A. LIVENGOOD
+COPIED COMMENTS/CODE IS NOT EXPLICITELY REFERENCED
 """
 
 # import glob  # to acces the files on pc
@@ -14,8 +17,6 @@ import numpy as np
 import matplotlib.pyplot as plt  # for plot
 
 import scipy.signal as sig # to use the median filter
-
-
 
 #%%
 # MAKE_POLAR : function to construct arrays for the polar coordinate
@@ -191,7 +192,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     
     #%%
     for idx,i in enumerate(observations):
-        epoxi_data_temp = pd.read_hdf('output/'+year+'_'+i+'_min_aper_150_dictionary_info.h5')
+        epoxi_data_temp = pd.read_hdf('../output/'+year+'_'+i+'_min_aper_150_dictionary_info.h5')
         if idx ==0:
             epoxi_data = epoxi_data_temp
         else:
