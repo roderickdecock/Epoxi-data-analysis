@@ -176,11 +176,11 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # plt.legend()
         # plt.colorbar()
         # plt.grid()
-        
+
     # SAVING
     df_epoxi_data_filter = epoxi_data[epoxi_data['filter_cw']==filter_wavelength]
     df_epoxi_data_filter = df_epoxi_data_filter.reset_index(drop = True)   
-    df_epoxi_data_filter.to_pickle('output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(filter_wavelength)+'.pkl')
+    df_epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(filter_wavelength)+'.pkl')
     return
 
 
@@ -199,7 +199,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
             epoxi_data = pd.concat([epoxi_data,epoxi_data_temp], ignore_index=True)
     
     #%%
-    filter_wavelength = 850 # one wavelength at the time, long runtime   
+    filter_wavelength = 950 # one wavelength at the time, long runtime   
     image_centering(epoxi_data, filter_wavelength)
 
 

@@ -90,7 +90,6 @@ def scale_to_range(df_epoxi_data, normalise = False): # dataFrame with epoxi dat
 
 #%%
 
-
 def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
     plt.figure()
     idx = 0
