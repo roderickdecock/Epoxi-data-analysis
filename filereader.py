@@ -512,8 +512,9 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         
         fits_inf.close() 
         ########################################################################## SAVING
-    #df.to_hdf('output/'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
-    return df
+
+    df.to_hdf('../output/'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
+    #return df
 ############
 
 #%%
@@ -526,8 +527,11 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
 # min_aperature = 150 # 38 for verification 300
 # max_aperature = 0
 # width_trim = 6 
+
+verification = False
+
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_vis_read('rad','2008','079',True,True,True,150,0,6)
+    df = epoxi_vis_read('rad','2009','087',True,True,True,150,0,6)
 
 # df = pd.DataFrame()
 
@@ -537,32 +541,33 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
 
    
 #%% VERIFICATION
-    fits_inf = fits.open("../verification/veri_circle_30.0_radius.fit")
-    data = fits_inf[0].data
-    veri_weight = np.ones((512,512))
-    veri_centroid = centroid_func(data,veri_weight)
-    veri_aper_diam = 60.
-    veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
-    fits_inf.close()  
-    #%%
-    fits_inf = fits.open("../verification/veri_circle_60.0_radius.fit")
-    data = fits_inf[0].data
-    veri_weight = np.ones((512,512))
-    veri_centroid = centroid_func(data,veri_weight)
-    veri_aper_diam = 120.
-    veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
-    fits_inf.close()  
-    
-    #%%
-    fits_inf = fits.open("../verification/veri_circle_60.0_radius_signal_strength_10.0.fit")
-    data = fits_inf[0].data
-    veri_weight = np.ones((512,512))
-    veri_centroid = centroid_func(data,veri_weight)
-    veri_aper_diam = 115.
-    veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
-    fits_inf.close()  
-    
-    print(veri_final)
+    if verification==True:
+        fits_inf = fits.open("../verification/veri_circle_30.0_radius.fit")
+        data = fits_inf[0].data
+        veri_weight = np.ones((512,512))
+        veri_centroid = centroid_func(data,veri_weight)
+        veri_aper_diam = 60.
+        veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
+        fits_inf.close()  
+        #%%
+        fits_inf = fits.open("../verification/veri_circle_60.0_radius.fit")
+        data = fits_inf[0].data
+        veri_weight = np.ones((512,512))
+        veri_centroid = centroid_func(data,veri_weight)
+        veri_aper_diam = 120.
+        veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
+        fits_inf.close()  
+        
+        #%%
+        fits_inf = fits.open("../verification/veri_circle_60.0_radius_signal_strength_10.0.fit")
+        data = fits_inf[0].data
+        veri_weight = np.ones((512,512))
+        veri_centroid = centroid_func(data,veri_weight)
+        veri_aper_diam = 115.
+        veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
+        fits_inf.close()  
+        
+        print(veri_final)
 
 
 

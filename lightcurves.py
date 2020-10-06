@@ -75,7 +75,7 @@ def scale_to_range(df_epoxi_data, normalise = False): # dataFrame with epoxi dat
     #average_range_SC = np.sum(df_epoxi_data['range_SC'])/df_epoxi_data['range_SC'].size
     #average_range_Sun = np.sum(df_epoxi_data['range_Sun'])/df_epoxi_data['range_Sun'].size
     # the values are in AU
-    average_range_SC = 1.0 
+    average_range_SC = 1.0 # check this!!! With other observations
     average_range_Sun = 1.0
     # Correct summed signal for physical effects -- 1/r^2 for distance,
     # scale back to a fully-illuminated disc not necessary as illumination of disc is not known.

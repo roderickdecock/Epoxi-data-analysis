@@ -134,8 +134,10 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         #  by convolution: {\frac {\partial f}{\partial y}}={\begin{bmatrix}-1\\+1\end{bmatrix}}*A
         # where * denotes the 1-dimensional convolution operation. This 2×1 filter will shift the image by half a pixel."
         # see https://en.wikipedia.org/wiki/Kernel_(image_processing) for extra info
-        image_gradient = (np.roll(med_image_prim,(0,1),axis = (0,1)) - np.roll(med_image_prim,(0,-1),axis = (0,1)))**2 \
-             + (np.roll(med_image_prim,(1,0),axis = (0,1)) - np.roll(med_image_prim,(-1,0),axis = (0,1)))**2
+        # image_gradient = (np.roll(med_image_prim,(0,1),axis = (0,1)) - np.roll(med_image_prim,(0,-1),axis = (0,1)))**2 \
+        #     + (np.roll(med_image_prim,(1,0),axis = (0,1)) - np.roll(med_image_prim,(-1,0),axis = (0,1)))**2
+        image_gradient_components = np.gradient(med_image_prim)
+        image_gradient = image_gradient_components[0]*image_gradient_components[0] + image_gradient_components[1] * image_gradient_components[1]
         image_disk = np.zeros([naxis1,naxis2])
         # within the radius of the Earth and on the right of the centre so 1st and 4th quadrant
         mask_disk = np.where(np.logical_and(radius <= earth_radius_pxl, np.logical_or(phi <= 0.5*np.pi, phi>= 1.5*np.pi)))
@@ -148,14 +150,16 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # get the maximum value, either from the ring or from the disk (which is scaled)  SCALING FACTOR???
         image_combined = np.maximum(image_ring, image_disk * 0.5 * np.max(image_gradient)/np.max(med_image_prim)) # SCALING FACTOR UNCLEAR
         print('starting with brute')
-        centroid_offset = brute_register(image_gradient, image_combined, max_shift = 60) #########################
+        centroid_offset = brute_register(image_gradient, image_combined, max_shift = 60) ### choose max shift
         centroid_last += centroid_offset
         print(centroid_offset)
-        centre = np.round(centroid_last - (naxis1-1)*0.5) # + 0.1 here inside the rounding, probably to round up
+        centre = np.round(centroid_last - (naxis1-1)*0.5) 
         print(centre)
+        # centre needs to be reversed, unknown where it goes wrong and the reason for it
+        # reversing leads to good results
         centre_reversed = np.array([centre[1],centre[0]])
         # 'target_center' was the initial estimated centre
-        epoxi_data.at[j,'target_center']  = centre_reversed #################### centre has to be reversed as in centre2 below
+        epoxi_data.at[j,'target_center']  = centre_reversed 
         epoxi_data.at[j,'earth_radius_pxl'] = earth_radius_pxl
         
         # centre_corrected = np.array([13,25]) + centroid_offset 
@@ -169,13 +173,13 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
     
         # #ax2.add_artist(leg_1)   
-        # centre2 = np.array([centre[1],centre[0]])
-        # plt.scatter(centre[1]+255.5, centre[0]+255.5, s=10,color = 'g', label = 'reversed final centroid')
-        # circle2 = plt.Circle(centre2+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
+        # plt.scatter(centre_reversed[0]+255.5, centre_reversed[1]+255.5, s=10,color = 'g', label = 'reversed final centroid')
+        # circle2 = plt.Circle(centre_reversed+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
         # ax2.add_artist(circle2)
         # plt.legend()
         # plt.colorbar()
         # plt.grid()
+        # ignore_this = True
 
     # SAVING
     df_epoxi_data_filter = epoxi_data[epoxi_data['filter_cw']==filter_wavelength]
@@ -189,6 +193,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     # INPUT
     year = '2008'
     observations = ['078','079'] # some contain 3, only the first 2 are used
+    #observations = ['149','150'] # some contain 3, only the first 2 are used
+    
+    
     
     #%%
     for idx,i in enumerate(observations):
@@ -199,7 +206,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
             epoxi_data = pd.concat([epoxi_data,epoxi_data_temp], ignore_index=True)
     
     #%%
-    filter_wavelength = 950 # one wavelength at the time, long runtime   
+    filter_wavelength = 450 # one wavelength at the time, long runtime   
     image_centering(epoxi_data, filter_wavelength)
 
 
