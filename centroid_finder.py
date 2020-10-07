@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt  # for plot
 
 import scipy.signal as sig # to use the median filter
 
+from scipy import signal
+
 #%%
 # MAKE_POLAR : function to construct arrays for the polar coordinate
 #  values of elements in a 2D array, relative to an arbitrary
@@ -123,6 +125,7 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         earth_radius_pxl      = (epoxi_data.at[j,'diameter']/2.0) / 2.0 # /2.0 (1st diameter to radius)  
         # 2nd: 2.0 microradian on a side per pixel so divided by 2.0 to get per pixel
         centroid_last = np.array([25,13]) + (512-1)/2. # [25,13] is a choice that is close to the final found value,
+        #centroid_last = np.array([-10,20]) + (512-1)/2. # [25,13] is a choice that is close to the final found value,
         # anything close to the middle of the picture whould work (if the object is close to that)
         naxis1 = epoxi_data.at[j,'naxis1']
         naxis2 = epoxi_data.at[j,'naxis2']
@@ -149,7 +152,23 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         image_ring[mask_ring] = np.max(med_image_prim)*0.25
         # get the maximum value, either from the ring or from the disk (which is scaled)  SCALING FACTOR???
         image_combined = np.maximum(image_ring, image_disk * 0.5 * np.max(image_gradient)/np.max(med_image_prim)) # SCALING FACTOR UNCLEAR
-        print('starting with brute')
+        ### This is too slow, is similar to brute register but over full image
+        # corr = signal.correlate2d(image_gradient,image_combined, boundary='symm', mode='same')
+        # y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
+        # centroid_offset = np.array([y-255.,x-255.]) ### manually subtract half the image size
+        
+        ### correlation, chooses automatically the fastest option between convolution or fourier transform
+        # (I think it chooses fourier transform) as the normal calculation is done in brute register 
+        # and that took too much time.
+        # The [::-1,::-1] rotates the image by 180 degrees, this makes it correlation and not convolution
+        corr = signal.convolve(image_gradient,image_combined[::-1,::-1], mode='same')
+        y, x = np.unravel_index(np.argmax(corr), corr.shape)
+        centroid_offset = np.array([y-255.-1,x-255.-1]) ### manually subtract half the image size, 
+        # additional -1 for better result (matches brute register result), 
+        # probably due to handling of position in correlation
+        print(centroid_offset)
+        print('starting with brute') 
+        ### original method:
         centroid_offset = brute_register(image_gradient, image_combined, max_shift = 60) ### choose max shift
         centroid_last += centroid_offset
         print(centroid_offset)
@@ -181,7 +200,7 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # plt.grid()
         # ignore_this = True
 
-    # SAVING
+    # SAVING ################
     df_epoxi_data_filter = epoxi_data[epoxi_data['filter_cw']==filter_wavelength]
     df_epoxi_data_filter = df_epoxi_data_filter.reset_index(drop = True)   
     df_epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(filter_wavelength)+'.pkl')
@@ -196,7 +215,14 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     #observations = ['149','150'] # some contain 3, only the first 2 are used
     
     
-    
+### RE-RUN because of image gradient and correlation function instead of brute register
+# 2008 078,079 all wavelengths
+# 2009 086,087 350
+
+# DONE RERUNNING and verified
+# 2008 078,079: 
+
+
     #%%
     for idx,i in enumerate(observations):
         epoxi_data_temp = pd.read_hdf('../output/'+year+'_'+i+'_min_aper_150_dictionary_info.h5')
@@ -206,7 +232,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
             epoxi_data = pd.concat([epoxi_data,epoxi_data_temp], ignore_index=True)
     
     #%%
-    filter_wavelength = 450 # one wavelength at the time, long runtime   
+    filter_wavelength = 350 # one wavelength at the time, long runtime   
     image_centering(epoxi_data, filter_wavelength)
 
 

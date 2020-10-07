@@ -72,9 +72,13 @@ def update_signal(epoxi_data_filter):
 def scale_to_range(df_epoxi_data, normalise = False): # dataFrame with epoxi data
     signal = df_epoxi_data['signal']  # np.array(epoxi_data['signal']) to make it into an array istead of series
     
-    #average_range_SC = np.sum(df_epoxi_data['range_SC'])/df_epoxi_data['range_SC'].size
-    #average_range_Sun = np.sum(df_epoxi_data['range_Sun'])/df_epoxi_data['range_Sun'].size
-    # the values are in AU
+    # average_range_SC_true = np.sum(df_epoxi_data['range_SC'])/df_epoxi_data['range_SC'].size
+    # average_range_Sun_true = np.sum(df_epoxi_data['range_Sun'])/df_epoxi_data['range_Sun'].size
+    # print(average_range_SC_true)
+    # print(average_range_Sun_true)
+    # average_range_SC is 
+    
+    # the values are in AU, scaled to 1 AU equivalent range from the spacecraft
     average_range_SC = 1.0 # check this!!! With other observations
     average_range_Sun = 1.0
     # Correct summed signal for physical effects -- 1/r^2 for distance,
@@ -128,7 +132,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     # INPUT
     year = '2008'
     observations = ['078','079'] 
-    wavelengths = [350,450,550,650,750,850]
+    #observations = ['149','150'] 
+    wavelengths = [350,450,550,650,750,850,950]
+    wavelengths = [350]
     colours = ['b','g','r','y'] # plots are 2 lines combined so manually assign colours
     # CONSTANT
     pixel_solid_angle = 2.0e-06 * 2.0e-06
