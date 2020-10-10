@@ -30,7 +30,7 @@ def update_signal(epoxi_data_filter):
         med_image = sig.medfilt(image_prim*weight,3)
         
         aper_radius = np.minimum(1.01*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0])
-        aper_finish = np.minimum(4.0*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) # 4.0
+        aper_finish = np.minimum(4.0*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) 
         
         done = False
         prev_signal = 0
@@ -64,10 +64,11 @@ def update_signal(epoxi_data_filter):
         # plt.colorbar()
         
         # print(final)
+    #print(np.sum(epoxi_data_filter['signal_rms']/epoxi_data_filter['signal'])/epoxi_data_filter['signal'].shape[0])
     return epoxi_data_filter
 
 #%%
-##################### SCALED TO RANGE SIGNAL IS NOT SAVED SO SAVED DF CONTAINS UNSCALED SIGNAL
+##################### 
 
 def scale_to_range(df_epoxi_data, normalise = False): # dataFrame with epoxi data
     signal = df_epoxi_data['signal']  # np.array(epoxi_data['signal']) to make it into an array istead of series
@@ -85,11 +86,13 @@ def scale_to_range(df_epoxi_data, normalise = False): # dataFrame with epoxi dat
     # scale back to a fully-illuminated disc not necessary as illumination of disc is not known.
     
     signal = signal * ((df_epoxi_data['range_SC'] /average_range_SC ) * (df_epoxi_data['range_Sun']/average_range_Sun))**2   
+    df_epoxi_data['scaled signal'] = signal
     
     if normalise == True:
         # Divide signal by its own average value.    
-        average_signal = np.sum(signal) / signal.size # needed for the lightcurves, not for values
+        average_signal = np.sum(signal) / signal.size # needed for the lightcurves, not for values 
         signal     = signal / average_signal
+        df_epoxi_data['normalised signal'] = signal
     return signal
 
 #%%
@@ -102,8 +105,14 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
         epoxi_data_filter = pd.read_pickle(filepath)
         epoxi_data_filter = update_signal(epoxi_data_filter)
         epoxi_data_filter['signal'] = scale_to_range(epoxi_data_filter)
-        print(np.sum(epoxi_data_filter['signal']*pixel_solid_angle)/epoxi_data_filter['signal'].shape[0])
-                
+        diurnally_averaged_signal = np.sum(epoxi_data_filter['signal']*pixel_solid_angle)/epoxi_data_filter['signal'].shape[0]
+        print(i,diurnally_averaged_signal)
+        epoxi_data_filter['diurnally averaged signal'] = diurnally_averaged_signal
+        #print(np.sum(epoxi_data_filter['signal_rms']/epoxi_data_filter['signal'])/epoxi_data_filter['signal'].shape[0])
+        di_avg_signal_std = np.std(epoxi_data_filter['signal']*pixel_solid_angle)
+        print('std',di_avg_signal_std) # standard deviation
+        epoxi_data_filter['diurnally averaged signal std'] = di_avg_signal_std
+        
         if i ==450 or i==550 or i==650 or i==850:
             normalised_signal_filter = scale_to_range(epoxi_data_filter,normalise=True)
             
@@ -111,6 +120,7 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
             filtered_longtitudes = []
             for j in np.arange(normalised_signal_filter.shape[0]):
                 filtered_longtitudes.append(epoxi_data_filter.at[j,'sub_SC_nom'][0])
+                # nominal sub_SC as the other sub_SC has faulty values
             
             x = np.array(filtered_longtitudes)%360
             y = np.array(normalised_signal_filter)
@@ -122,23 +132,32 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
             plt.plot(x[0:minimum_index],y[0:minimum_index], label = 'CW'+str(i),color = colours[idx])
             plt.plot(x[minimum_index:],y[minimum_index:],color = colours[idx])
             idx += 1
+        epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
     plt.xlim(0,360)
     plt.ylim(0.8,1.2)
     plt.grid(True)
     plt.legend()
     return
 #%%
+### RERUN EVERYTHING
+# Done: 
+# 2008 078,079 149,150 156, 157
+# 2009 086,087
+
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
     year = '2008'
-    observations = ['078','079'] 
+    #observations = ['078','079'] 
     #observations = ['149','150'] 
+    observations = ['156','157'] 
+    #observations = ['086','087']
+    
     wavelengths = [350,450,550,650,750,850,950]
-    wavelengths = [350]
     colours = ['b','g','r','y'] # plots are 2 lines combined so manually assign colours
     # CONSTANT
     pixel_solid_angle = 2.0e-06 * 2.0e-06
 
     lightcurves_plot(year, observations, wavelengths, colours, pixel_solid_angle)
+    
 
 

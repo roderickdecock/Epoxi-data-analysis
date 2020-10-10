@@ -163,17 +163,24 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # The [::-1,::-1] rotates the image by 180 degrees, this makes it correlation and not convolution
         corr = signal.convolve(image_gradient,image_combined[::-1,::-1], mode='same')
         y, x = np.unravel_index(np.argmax(corr), corr.shape)
-        centroid_offset = np.array([y-255.-1,x-255.-1]) ### manually subtract half the image size, 
-        # additional -1 for better result (matches brute register result), 
+        centroid_offset = np.array([y-255.,x-255.]) ### manually subtract half the image size, 
+        # additional -1 for better result (matches brute register result), has been removed due to 
+        # sometimes not including the entire Earth on the right side which has more signal than the left side
         # probably due to handling of position in correlation
-        print(centroid_offset)
+        
+        # centroid_last2 = np.array([25,13]) + (512-1)/2. # [25,13] is a choice that is close to the final found value,
+        # centroid_last2 += centroid_offset2
+        # centre2 = np.round(centroid_last2 - (naxis1-1)*0.5) 
+        # centre_reversed2 = np.array([centre2[1],centre2[0]])            
+        #print(centroid_offset2)
+        
         print('starting with brute') 
         ### original method:
-        centroid_offset = brute_register(image_gradient, image_combined, max_shift = 60) ### choose max shift
+        #centroid_offset = brute_register(image_gradient, image_combined, max_shift = 60) ### choose max shift
         centroid_last += centroid_offset
-        print(centroid_offset)
+        #print(centroid_offset)
         centre = np.round(centroid_last - (naxis1-1)*0.5) 
-        print(centre)
+        #print(centre)
         # centre needs to be reversed, unknown where it goes wrong and the reason for it
         # reversing leads to good results
         centre_reversed = np.array([centre[1],centre[0]])
@@ -181,24 +188,27 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         epoxi_data.at[j,'target_center']  = centre_reversed 
         epoxi_data.at[j,'earth_radius_pxl'] = earth_radius_pxl
         
-        # centre_corrected = np.array([13,25]) + centroid_offset 
-        # fig2, ax2 = plt.subplots()
-        # plt.title('Median data')
-        # plt.imshow(med_image_prim, cmap='gray')
-        # circle1 = plt.Circle(centre_corrected+255.5, earth_radius_pxl, color='r', fill=False, label = 'earth radius')
-        # ax2.add_artist(circle1)
-        # #leg_1 = ax2.legend(circle1, 'earth radius', loc='lower left')
-        # plt.scatter(centre_corrected[0]+255.5, centre_corrected[1]+255.5, s=10,color = 'b', label = 'final centroid')
-        # plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
+        centre_corrected = np.array([13,25]) + centroid_offset 
+        fig2, ax2 = plt.subplots()
+        plt.title('Median data')
+        plt.imshow(med_image_prim, cmap='gray')
+        circle1 = plt.Circle(centre_corrected+255.5, earth_radius_pxl, color='r', fill=False, label = 'earth radius')
+        ax2.add_artist(circle1)
+        #leg_1 = ax2.legend(circle1, 'earth radius', loc='lower left')
+        plt.scatter(centre_corrected[0]+255.5, centre_corrected[1]+255.5, s=10,color = 'b', label = 'final centroid')
+        plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
     
-        # #ax2.add_artist(leg_1)   
-        # plt.scatter(centre_reversed[0]+255.5, centre_reversed[1]+255.5, s=10,color = 'g', label = 'reversed final centroid')
-        # circle2 = plt.Circle(centre_reversed+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
-        # ax2.add_artist(circle2)
-        # plt.legend()
-        # plt.colorbar()
-        # plt.grid()
-        # ignore_this = True
+        #ax2.add_artist(leg_1)   
+        plt.scatter(centre_reversed[0]+255.5, centre_reversed[1]+255.5, s=10,color = 'g', label = 'reversed final centroid')
+        circle2 = plt.Circle(centre_reversed+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
+        ax2.add_artist(circle2)
+        # plt.scatter(centre_reversed2[0]+255.5, centre_reversed2[1]+255.5, s=10,color = 'y', label = 'reversed final centroid')
+        # circle3 = plt.Circle(centre_reversed2+255.5, earth_radius_pxl, color='g', fill=False, label = 'earth radius')
+        # ax2.add_artist(circle3)
+        plt.legend()
+        plt.colorbar()
+        plt.grid()
+        ignore_this = True
 
     # SAVING ################
     df_epoxi_data_filter = epoxi_data[epoxi_data['filter_cw']==filter_wavelength]
@@ -210,17 +220,21 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
 #%%    
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
-    year = '2008'
-    observations = ['078','079'] # some contain 3, only the first 2 are used
+    year = '2009'
+    #observations = ['078','079'] # some contain 3, only the first 2 are used
     #observations = ['149','150'] # some contain 3, only the first 2 are used
+    #observations = ['156','157'] # some contain 3, only the first 2 are used
+    #observations = ['086','087'] # some contain 3, only the first 2 are used
+    observations = ['086','087'] # some contain 3, only the first 2 are used
     
-    
-### RE-RUN because of image gradient and correlation function instead of brute register
+################### -1 removed at centroid offset, does not include entire Earth
+### RE-RUN because of image gradient and correlation function instead of brute register and -1 removed
 # 2008 078,079 all wavelengths
+# 2008 149,150 350,450,550
 # 2009 086,087 350
 
 # DONE RERUNNING and verified
-# 2008 078,079: 
+# 2008 078,079: all wavelengths !!! Difference for 950 !!!
 
 
     #%%
@@ -232,7 +246,7 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
             epoxi_data = pd.concat([epoxi_data,epoxi_data_temp], ignore_index=True)
     
     #%%
-    filter_wavelength = 350 # one wavelength at the time, long runtime   
+    filter_wavelength = 950 # one wavelength at the time, long runtime is improved  
     image_centering(epoxi_data, filter_wavelength)
 
 

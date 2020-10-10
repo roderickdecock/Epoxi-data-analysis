@@ -514,7 +514,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         ########################################################################## SAVING
 
     df.to_hdf('../output/'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
-    #return df
+    return df
 ############
 
 #%%
@@ -531,7 +531,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
 verification = False
 
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_vis_read('rad','2009','087',True,True,True,150,0,6)
+    df = epoxi_vis_read('rad','2009','278',True,True,True,150,0,6)
 
 # df = pd.DataFrame()
 
