@@ -103,7 +103,7 @@ def brute_register(key_frame,registering_frame,max_shift = None):
     return best_shifts
 
 #%% IMAGE CENTERING
-def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astronomical_unit = 149.597870691e06):
+def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astronomical_unit = 149.597870691e06, image = False):
     #earth_diam_km = 1.2756e04         #Earth diameter in km
     #astronomical_unit = 149.597870691e06 #Astronomical UNIT in km.
     
@@ -172,7 +172,7 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # centroid_last2 += centroid_offset2
         # centre2 = np.round(centroid_last2 - (naxis1-1)*0.5) 
         # centre_reversed2 = np.array([centre2[1],centre2[0]])            
-        #print(centroid_offset2)
+        #print(centroid_offset)
         
         print('starting with brute') 
         ### original method:
@@ -187,45 +187,48 @@ def image_centering(epoxi_data,filter_wavelength,earth_diam_km = 1.2756e04,astro
         # 'target_center' was the initial estimated centre
         epoxi_data.at[j,'target_center']  = centre_reversed 
         epoxi_data.at[j,'earth_radius_pxl'] = earth_radius_pxl
+        #print(centre_reversed)
         
-        centre_corrected = np.array([13,25]) + centroid_offset 
-        fig2, ax2 = plt.subplots()
-        plt.title('Median data')
-        plt.imshow(med_image_prim, cmap='gray')
-        circle1 = plt.Circle(centre_corrected+255.5, earth_radius_pxl, color='r', fill=False, label = 'earth radius')
-        ax2.add_artist(circle1)
-        #leg_1 = ax2.legend(circle1, 'earth radius', loc='lower left')
-        plt.scatter(centre_corrected[0]+255.5, centre_corrected[1]+255.5, s=10,color = 'b', label = 'final centroid')
-        plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
-    
-        #ax2.add_artist(leg_1)   
-        plt.scatter(centre_reversed[0]+255.5, centre_reversed[1]+255.5, s=10,color = 'g', label = 'reversed final centroid')
-        circle2 = plt.Circle(centre_reversed+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
-        ax2.add_artist(circle2)
-        # plt.scatter(centre_reversed2[0]+255.5, centre_reversed2[1]+255.5, s=10,color = 'y', label = 'reversed final centroid')
-        # circle3 = plt.Circle(centre_reversed2+255.5, earth_radius_pxl, color='g', fill=False, label = 'earth radius')
-        # ax2.add_artist(circle3)
-        plt.legend()
-        plt.colorbar()
-        plt.grid()
+        if image == True:
+            # Before I realised I had to reverse the centroid, I tried to correct it, this can be removed
+            centre_corrected = np.array([13,25]) + centroid_offset 
+            fig2, ax2 = plt.subplots()
+            plt.title('Median data')
+            plt.imshow(med_image_prim, cmap='gray')
+            circle1 = plt.Circle(centre_corrected+255.5, earth_radius_pxl, color='r', fill=False, label = 'earth radius')
+            ax2.add_artist(circle1)
+            #leg_1 = ax2.legend(circle1, 'earth radius', loc='lower left')
+            plt.scatter(centre_corrected[0]+255.5, centre_corrected[1]+255.5, s=10,color = 'b', label = 'final centroid')
+            plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
+        
+            #ax2.add_artist(leg_1)   
+            plt.scatter(centre_reversed[0]+255.5, centre_reversed[1]+255.5, s=10,color = 'g', label = 'reversed final centroid')
+            circle2 = plt.Circle(centre_reversed+255.5, earth_radius_pxl, color='b', fill=False, label = 'earth radius')
+            ax2.add_artist(circle2)
+            # plt.scatter(centre_reversed2[0]+255.5, centre_reversed2[1]+255.5, s=10,color = 'y', label = 'reversed final centroid')
+            # circle3 = plt.Circle(centre_reversed2+255.5, earth_radius_pxl, color='g', fill=False, label = 'earth radius')
+            # ax2.add_artist(circle3)
+            plt.legend()
+            plt.colorbar()
+            plt.grid()
         ignore_this = True
 
     # SAVING ################
     df_epoxi_data_filter = epoxi_data[epoxi_data['filter_cw']==filter_wavelength]
     df_epoxi_data_filter = df_epoxi_data_filter.reset_index(drop = True)   
-    df_epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(filter_wavelength)+'.pkl')
+    df_epoxi_data_filter.to_pickle('../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(filter_wavelength)+'.pkl')
     return
 
 
 #%%    
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
-    year = '2009'
-    #observations = ['078','079'] # some contain 3, only the first 2 are used
-    #observations = ['149','150'] # some contain 3, only the first 2 are used
-    #observations = ['156','157'] # some contain 3, only the first 2 are used
-    #observations = ['086','087'] # some contain 3, only the first 2 are used
-    observations = ['086','087'] # some contain 3, only the first 2 are used
+    year = '2008'
+    #observations = ['078','079'] 
+    observations = ['149','150'] 
+    #observations = ['156','157'] 
+    #observations = ['086','087'] 
+    #observations = ['277','278'] # WHAT TO DO WITH THE 270 OBSERVATION?
     
 ################### -1 removed at centroid offset, does not include entire Earth
 ### RE-RUN because of image gradient and correlation function instead of brute register and -1 removed
@@ -233,21 +236,25 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
 # 2008 149,150 350,450,550
 # 2009 086,087 350
 
-# DONE RERUNNING and verified
+# DONE RERUNNING and verified in lightcurves
 # 2008 078,079: all wavelengths !!! Difference for 950 !!!
 
+# I don't remember but I think I did them all
+# DONE
+# 2008 149,150 350,450
+# 2009 277, 278
 
     #%%
     for idx,i in enumerate(observations):
-        epoxi_data_temp = pd.read_hdf('../output/'+year+'_'+i+'_min_aper_150_dictionary_info.h5')
+        epoxi_data_temp = pd.read_hdf('../output/RADREV_'+year+'_'+i+'_min_aper_150_dictionary_info.h5')
         if idx ==0:
             epoxi_data = epoxi_data_temp
         else:
             epoxi_data = pd.concat([epoxi_data,epoxi_data_temp], ignore_index=True)
     
     #%%
-    filter_wavelength = 950 # one wavelength at the time, long runtime is improved  
-    image_centering(epoxi_data, filter_wavelength)
+    filter_wavelength = 750 # one wavelength at the time, long runtime is improved  
+    image_centering(epoxi_data, filter_wavelength, image = False)
 
 
 

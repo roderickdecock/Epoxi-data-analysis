@@ -195,7 +195,7 @@ def aper_photom(image, centre = None,radius = None ):
 
 
 #%%
-
+from photutils.background import Background2D
 
 
 def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_background,\
@@ -253,6 +253,11 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
             med_image_prim = sig.medfilt(image_prim,3)  # 3, default value,  ndimage.median_filter alternative
             med_weight = sig.medfilt(weight,3)
             
+            width_trim = 6
+            bkg = Background2D(med_image_prim,(128,128))
+            result_imag = med_image_prim - bkg.background
+            result_imag = trim_edges(result_imag, 6)
+            
             first_non_zero_row = width_trim
             last_non_zero_row = med_image_prim.shape[0] - width_trim -1 # -1 for index
             # Added image of the top 3 rows and added weight of the bottom 3 rows
@@ -276,7 +281,10 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
                 image_prim[:,i] -= cols_left_imag
             for i in np.arange(int(med_image_prim.shape[1]*0.5),last_non_zero_col+1):
                 image_prim[:,i] -= cols_right_imag
-        
+            image_prim = result_imag
+            
+            
+            
         naxis1 = image_prim.shape[1]
         naxis2 = image_prim.shape[0]
         epoxi_hrivis = {'file': 'no file processed',    \
@@ -513,7 +521,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         fits_inf.close() 
         ########################################################################## SAVING
 
-    df.to_hdf('../output/'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
+    df.to_hdf('../output/RADREV_'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
     return df
 ############
 
@@ -531,7 +539,8 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
 verification = False
 
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_vis_read('rad','2009','278',True,True,True,150,0,6)
+    df = epoxi_vis_read('radrev','2008','150',True,True,True,150,0,6)
+    # No difference in rad and radrev as far as I can see
 
 # df = pd.DataFrame()
 
