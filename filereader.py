@@ -7,6 +7,13 @@ Created on Mon Aug 31 09:45:01 2020
 CODE ADAPTED FROM EXISTING CODE BY DR. TIMOTHY A. LIVENGOOD
 COPIED COMMENTS/CODE IS NOT EXPLICITELY REFERENCED
 """
+#####
+##### Rad uses Livengood background method
+##### Radrev is used to try the photutils background, for 149,150 size was 128,128 no disk 
+#####     Not a perfect result, small jumps and zig-zag still present
+#####   for 086,087 size is 256,128 and exclude_percentile = 0 and disk of radius 150 is applied as mask
+#####     good result
+
 #### IDL first index column, 2nd row  Python first index row, end column
 #### IDL slicing includes the last number: 1:3 includes index 3. Python does not
 #### IDL < minimum operator
@@ -20,9 +27,14 @@ from astropy.visualization import astropy_mpl_style
 plt.style.use(astropy_mpl_style)
 
 import glob  # to acces the files on pc
-import scipy.signal as sig # to use the median filter
+#import scipy.signal as sig # to use the median filter
+import scipy.ndimage as ndim # to use the median filter
 
 import pandas as pd # to save the data
+
+from centroid_finder import make_polar
+
+from photutils.background import Background2D
 
 # FUNCTIONS
 def rotate_image(original_image):
@@ -189,13 +201,12 @@ def aper_photom(image, centre = None,radius = None ):
     # pixel value.    
     patched_image = np.copy(image)
     patched_image[aper_wh] = average_background
-    return photom, final, patched_image, annulus_radius
+    return photom, final, patched_image
     
 
 
-
 #%%
-from photutils.background import Background2D
+
 
 
 def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_background,\
@@ -250,11 +261,21 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         # that are averaged, so it extrapolates slightly to include the outermost
         # of the averaged rows/columns.
         if remove_background == True:
-            med_image_prim = sig.medfilt(image_prim,3)  # 3, default value,  ndimage.median_filter alternative
-            med_weight = sig.medfilt(weight,3)
+            med_image_prim = ndim.median_filter(image_prim,3)  # 3, default value,  sig.medfilt alternative but slower
+            med_weight = ndim.median_filter(weight,3)
+            
+            earth_radius_pxl = 150 #60 150 for polar 1
+            centroid_last = np.array([20,10]) + (512-1)/2. #np.array([10,30]) + (512-1)/2. for polar 1
+            
+            radius, phi = make_polar(512,512, centre = centroid_last)
+            
+            image_disk = np.zeros([512,512])
+            mask_disk = np.where(np.logical_and(radius <= earth_radius_pxl, np.logical_or(phi <= 0.5*np.pi, phi>= 1.5*np.pi)))
+            image_disk[mask_disk] = True
             
             width_trim = 6
-            bkg = Background2D(med_image_prim,(128,128))
+            bkg = Background2D(med_image_prim,(256,128),mask = image_disk, exclude_percentile=0,sigma_clip=None) # (128,128) (ny,nx) (256,128)
+            #bkg = Background2D(med_image_prim,(128,128)) # doesn't work exclude_percentile fixes it
             result_imag = med_image_prim - bkg.background
             result_imag = trim_edges(result_imag, 6)
             
@@ -271,7 +292,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
                 image_prim[i,:] -= (rows_top_imag*(image_prim.shape[0]-1-middle_averaged-i) + rows_bot_imag*(i-middle_averaged))\
                     /(image_prim.shape[0]-1-middle_averaged-middle_averaged)
             # Need to calculate a new median image from the now-modified image.
-            med_image_prim = sig.medfilt(image_prim,3)
+            med_image_prim = ndim.median_filter(image_prim,3)
             first_non_zero_col = width_trim
             last_non_zero_col = med_image_prim.shape[1] - width_trim -1 #-1 for indexs
             cols_left_imag = background_average(med_image_prim, med_weight, first_non_zero_col, True, False)
@@ -281,6 +302,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
                 image_prim[:,i] -= cols_left_imag
             for i in np.arange(int(med_image_prim.shape[1]*0.5),last_non_zero_col+1):
                 image_prim[:,i] -= cols_right_imag
+            ##### NEW BACKGROUND METHOD
             image_prim = result_imag
             
             
@@ -433,7 +455,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         # hits. This is an unwise choice for stellar photometry, but it should
         # work just fine for the Earth. It also eliminates the pesky influence
         # of scattered zero-weighted pixels.
-        med_image = sig.medfilt(image_prim*weight,3)
+        med_image = ndim.median_filter(image_prim*weight,3) 
         aper_diam = np.min([aper_start,image_prim.shape[0],image_prim.shape[1]]) # aper_start*1.5 works better
         # The verification of the code is successful however, it does not work (dividing by zero error) when the background is zero 
         # as the annulus signal is then zero. Furthermore, if the aperture radius is too small, the average background from 
@@ -537,9 +559,9 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
 # width_trim = 6 
 
 verification = False
-
+#%%
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_vis_read('radrev','2008','150',True,True,True,150,0,6)
+    df = epoxi_vis_read('radrev','2009','278',True,True,True,150,0,6)
     # No difference in rad and radrev as far as I can see
 
 # df = pd.DataFrame()
@@ -547,8 +569,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
 # observations = '150'
 
 # folder = 'rad'
+#%%
+    
 
-   
 #%% VERIFICATION
     if verification==True:
         fits_inf = fits.open("../verification/veri_circle_30.0_radius.fit")
@@ -557,6 +580,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
         veri_centroid = centroid_func(data,veri_weight)
         veri_aper_diam = 60.
         veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
+        
+        
+        
         fits_inf.close()  
         #%%
         fits_inf = fits.open("../verification/veri_circle_60.0_radius.fit")
@@ -568,12 +594,16 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
         fits_inf.close()  
         
         #%%
-        fits_inf = fits.open("../verification/veri_circle_60.0_radius_signal_strength_10.0.fit")
+        fits_inf = fits.open("../verification/veri_circle_30.0_radius_signal_strength_10.0.fit")
         data = fits_inf[0].data
         veri_weight = np.ones((512,512))
         veri_centroid = centroid_func(data,veri_weight)
         veri_aper_diam = 115.
         veri_signal_aperture, veri_final, veri_patch  = aper_photom(data, centre = veri_centroid, radius = veri_aper_diam*0.5)
+        
+        bkg = Background2D(data,(128,128))
+        result_imag = data - bkg.background
+        
         fits_inf.close()  
         
         print(veri_final)

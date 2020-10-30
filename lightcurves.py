@@ -317,6 +317,7 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
     plt.figure() #is here when using all wavelengths, messes up when plotting in update signal
     idx = 0
     for i in wavelengths:
+        #filepath = r'../output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
         filepath = r'../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
         epoxi_data_filter = pd.read_pickle(filepath)
         if observations == ['149','150']:
@@ -352,8 +353,10 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
             plt.plot(x[0:minimum_index],y[0:minimum_index], label = 'CW'+str(i),color = colours[idx])
             plt.plot(x[minimum_index:],y[minimum_index:],color = colours[idx])
             idx += 1
-        ### SAVING IS OFF
+        ####################################################
+        ### SAVING IS OFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
+        epoxi_data_filter.to_pickle('../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
     plt.title('AAAAAA') ###################### change manually
     plt.xlabel('Central Meridian (West Longtitude)')
     plt.ylabel('Normalised signal')
@@ -368,15 +371,16 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
 
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
-    year = '2008'
+    #year = '2008'
+    year = '2009'
     #observations = ['078','079'] 
-    observations = ['149','150'] 
+    #observations = ['149','150'] 
     #observations = ['156','157'] 
-    #observations = ['086','087']
+    observations = ['086','087']
     #observations = ['277','278']
     
     wavelengths = [350,450,550,650,750,850,950]
-    wavelengths = [450,650]
+    #wavelengths = [450]
     colours = ['b','g','r','y'] # plots are 2 lines combined so manually assign colours
     # CONSTANT
     pixel_solid_angle = 2.0e-06 * 2.0e-06
