@@ -10,52 +10,13 @@ import numpy as np
 
 import matplotlib.pyplot as plt  # for plot
 
-import scipy.signal as sig # to use the median filter
-#%%
-
-year = ['2008','2009']
-fig, ax = plt.subplots()
-
-for i in year:
-    if i == '2008':
-        observations = [('078','079'), ('149','150'), ('156','157')]
-    else:
-        observations = [('086','087'),('277','278')]
-    for j in observations:
-        print(j)
-        idx = 0
-        wavelengths = [350,450,650,850]
-        colours = ['y','b','g','r']
-        for k in wavelengths:
-            filepath = r'../output/'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
-            if j[0] == '149' or j[0]== '086':
-                filepath = r'../output/RADREV_'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
-            epoxi_data_filter = pd.read_pickle(filepath)
-            pixel_solid_angle = 2.0e-06 * 2.0e-06
-            phase_angles = epoxi_data_filter['phase_angle']
-            scaled_signal = epoxi_data_filter['scaled signal']*pixel_solid_angle
-            plt.scatter(phase_angles,scaled_signal, color = colours[idx],s=1)            
-            idx +=1
-        if j[0]=='078':
-            fig.legend(['350','450','650','850'])
-
-fig.text(58,1.5e-7,'EarthObs1',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
-fig.text(75,1e-7,'EarthObs4',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
-fig.text(76.6,0.7e-7,'EarthObs5',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
-fig.text(85,0.5e-7,'PolarObs1North',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
-fig.text(87,0.3e-7,'PolarObs2South',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
-plt.grid(True)
-ax.set_xlim(0,90)
-ax.set_ylim(0,5.5e-7)
-ax.set_ylabel('scaled signal W/$m^2$/$\mu m$')
-ax.set_xlabel('phase angle')
-
-
 #%%
 
 earth_diam = 1.2756e04         #Earth diameter in km
 astronomical_unit = 149.597870691e06 # km
 
+# Values from ASTM 2000 Standard Extraterrestrial Spectrum Reference E-490-00
+# Values retrieved by Dr. Livengood
 SOLAR_350 = 1.033249e+03  #W/m^2/um at 1 AU from Sun
 SOLAR_450 = 1.878244e+03  #W/m^2/um at 1 AU from Sun
 SOLAR_550 = 1.850052e+03  #W/m^2/um at 1 AU from Sun
@@ -79,10 +40,167 @@ solid_angle = 2.0e-06 * 2.0e-06
 
 phase_angle = np.arange(0,91,1)
 
-ill_frac = 0.5*(1 + np.cos(np.deg2rad(phase_angle)))
+# ill_frac = 0.5*(1 + np.cos(np.deg2rad(phase_angle)))
 lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
                      np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
 
+def lamber_phase_function(phase_angle):
+    return ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
+                     np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
+    
+#%%
+
+def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_E4_E5 = False, scale_to_P1_P2 = False):
+    fig, ax = plt.subplots()
+    
+    averages_signal_obs = []
+    averages_reflectance_obs = []
+    geometric_albedo_list = []
+    
+    for i in year:
+        if i == '2008':
+            observations = [('078','079'), ('149','150'), ('156','157')]
+            #observations = [('078','079')]
+        else:
+            observations = [('086','087'),('277','278')]
+        for j in observations:
+            print(j)
+            wavelengths = [350,450,550,650,750,850,950]
+            colours = ['y','b','c','g','m','r','k']
+            average_signal = []
+            average_reflectance = []
+            geometric_albedo_temp = []
+            
+            for idx,k in enumerate(wavelengths):
+                filepath = r'../output/'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                if j[0] == '149' or j[0]== '086':
+                    filepath = r'../output/RADREV_'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                epoxi_data_filter = pd.read_pickle(filepath)
+                pixel_solid_angle = 2.0e-06 * 2.0e-06
+                phase_angles_obs = epoxi_data_filter['phase_angle']
+                scaled_signal = epoxi_data_filter['scaled signal']*pixel_solid_angle
+                avg_phase_angles_obs = int(np.round(np.mean(phase_angles_obs)))
+                if mallama ==True:
+                    geometric_albedo = 0.2
+                    signal = geometric_albedo*lamber_phase_func*list_wl[idx]
+                    if j == ('078','079'): #only need to plot this once, the first time
+                        plt.plot(phase_angle,signal, color = colours[idx])  
+                     
+                elif scale_to_E1 == True:
+                    if j == ('078','079'):
+                        lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs, dtype=np.float64))
+                        geometric_albedo = scaled_signal * 1/(list_wl[idx]*lamber_phase_func_alpha)
+                        geometric_albedo_avg = np.mean(geometric_albedo)
+                        signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
+                        plt.plot(phase_angle,signal, color = colours[idx]) 
+                        
+                elif scale_to_E1_E4_E5 == True:
+                    if i == '2008': # loop trhough E1,E4,E5 to get the data for the Lambert phase
+                        albedo_list = []
+                        for l in observations:
+                            filepath_temp = r'../output/'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                            if l[0] == '149':
+                                filepath_temp = r'../output/RADREV_'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                            epoxi_data_filter_temp = pd.read_pickle(filepath_temp)
+                            phase_angles_obs_temp = epoxi_data_filter_temp['phase_angle']
+                            scaled_signal_temp = epoxi_data_filter_temp['scaled signal']*pixel_solid_angle
+                            # now find the albedo
+                            lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs_temp, dtype=np.float64))
+                            geometric_albedo = scaled_signal_temp * 1/(list_wl[idx]*lamber_phase_func_alpha)
+                            albedo_list.append(geometric_albedo)
+                        geometric_albedo_avg = np.mean(albedo_list)
+                        signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
+                        plt.plot(phase_angle,signal, color = colours[idx]) 
+                
+                elif scale_to_P1_P2 == True:
+                    if i == '2009': # loop trhough P1,P2 to get the data for the Lambert phase
+                        albedo_list = []
+                        for l in observations:
+                            filepath_temp = r'../output/'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                            if l[0] == '086':
+                                filepath_temp = r'../output/RADREV_'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                            epoxi_data_filter_temp = pd.read_pickle(filepath_temp)
+                            phase_angles_obs_temp = epoxi_data_filter_temp['phase_angle']
+                            scaled_signal_temp = epoxi_data_filter_temp['scaled signal']*pixel_solid_angle
+                            # now find the albedo
+                            lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs_temp, dtype=np.float64))
+                            geometric_albedo = scaled_signal_temp * 1/(list_wl[idx]*lamber_phase_func_alpha)
+                            albedo_list.append(geometric_albedo)
+                        geometric_albedo_avg = np.mean(albedo_list)
+                        signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
+                        plt.plot(phase_angle,signal, color = colours[idx]) 
+                else:
+                    signal = np.zeros(scaled_signal.shape)
+                    
+                error = scaled_signal - signal[avg_phase_angles_obs]
+                mean_error = np.mean(error)
+                std_error = np.std(error)
+                print(k,'mean error',mean_error,'std error', std_error)
+                
+                lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs, dtype=np.float64))
+                geometric_albedo = scaled_signal * 1/(list_wl[idx]*lamber_phase_func_alpha)
+                geometric_albedo_temp.append(np.mean(geometric_albedo))
+                average_signal.append(np.mean(scaled_signal))
+                average_reflectance.append(np.mean(scaled_signal)/list_wl[idx])
+                plt.scatter(phase_angles_obs,scaled_signal, color = colours[idx],s=1)            
+            averages_signal_obs.append(average_signal)
+            averages_reflectance_obs.append(average_reflectance)
+            geometric_albedo_list.append(geometric_albedo_temp)
+            if j[0]=='078':
+                fig.legend(['350','450','550','650','750','850','950'], loc = 'lower left')
+    
+    fig.text(58,1e-7,'EarthObs1',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
+    fig.text(75,4e-7,'EarthObs4',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
+    fig.text(76.6,0.7e-7,'EarthObs5',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
+    fig.text(85,0.5e-7,'PolarObs1North',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
+    fig.text(87,4.3e-7,'PolarObs2South',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
+    plt.grid(True)
+    ax.set_xlim(0,90)
+    ax.set_ylim(0,5.5e-7)
+    ax.set_ylabel('scaled signal W/$m^2$/$\mu m$')
+    ax.set_xlabel('phase angle')
+    return np.array(geometric_albedo_list)
+
+mallama = False
+scale_to_E1 = False
+scale_to_E1_E4_E5 = False
+scale_to_P1_P2 = True
+
+year = ['2008','2009']
+#year = ['2008']
+
+list_wl = [SOLAR_350,SOLAR_450,SOLAR_550,SOLAR_650,SOLAR_750,SOLAR_850,SOLAR_950]
+if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
+    geometric_albedo = phase_curve(year, list_wl, scale_to_E1=True)
+
+#%%    
+averages = np.array(averages_signal_obs)
+omega = np.zeros(averages.shape)
+list_wl = [SOLAR_350,SOLAR_450,SOLAR_550,SOLAR_650,SOLAR_750,SOLAR_850,SOLAR_950]
+phase_angles = np.array([58,75,76.6,85,87])
+for idx2, j in enumerate(averages):
+    phase_angle = phase_angles[idx2]
+    for idx, i in enumerate(list_wl):
+        lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
+                         np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
+        omega[idx2,idx] = j[idx] * 3/2 * 1/(i*lamber_phase_func)
+#%%
+phase_angle = np.arange(0,91,1)
+lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
+                     np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
+for idx, i in enumerate(list_wl): 
+    for j in np.arange(omega.shape[0]):
+        test = 2/3*omega[j,idx]*lamber_phase_func*i
+        plt.plot(phase_angle,test, color = colours[idx])
+#%%    
+phase_angle = np.arange(0,91,1)
+lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
+                     np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
+for idx, i in enumerate(list_wl): 
+    for j in np.arange(omega.shape[0]):
+        average_omega = np.mean(omega[j,:])
+        test = 2/3*average_omega*lamber_phase_func*i
+        plt.plot(phase_angle,test, color = colours[idx])
 #%%
 ### Mallama uses data from Goode
 # angles from Goode and the corresponding effective albedo
@@ -143,8 +261,15 @@ for idx, i in enumerate(list_wl):
     # using a geometic albedo = 0.2 from Mallama works better
     test = 0.2*lamber_phase_func*i
     plt.plot(phase_angle,test, color = colours[idx])
+    # geometric albedo https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html
+    # too high values
+    #test2 = 0.434*lamber_phase_func*i
+    #plt.plot(phase_angle,test2, color = colours[idx])    
     
 plt.legend()
+
+
+
 
 
 

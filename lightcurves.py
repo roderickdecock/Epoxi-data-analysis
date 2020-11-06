@@ -14,7 +14,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt  # for plot
 
-import scipy.signal as sig # to use the median filter
+#import scipy.signal as sig # to use the median filter
+import scipy.ndimage as ndim # to use the median filter
 
 from filereader import aper_photom  # python runs the code of filereader  when importing the if __name__ == "__main__": prevents this
 
@@ -210,7 +211,7 @@ def update_signal(epoxi_data_filter, moon=False):
         width_trim = 6 # should correspond to the width trim that was originally applied
         image_prim = epoxi_data_filter.at[i,'image'][width_trim:512-width_trim,width_trim:512-width_trim] # elimanating the zeros at the edge
         weight = epoxi_data_filter.at[i,'weight'][width_trim:512-width_trim,width_trim:512-width_trim]
-        med_image = sig.medfilt(image_prim*weight,3)
+        med_image = ndim.medfilt(image_prim*weight,3)
         
         aper_radius = np.minimum(1.01*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) #*1.01, *1.5 for EarthObs4
         aper_finish = np.minimum(4.0*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) 
