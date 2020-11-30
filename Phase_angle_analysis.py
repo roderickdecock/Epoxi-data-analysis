@@ -57,14 +57,24 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
     averages_reflectance_obs = []
     geometric_albedo_list = []
     
+    if mallama == True:
+        error_file = open('../output/errors_mallama.txt','w')
+    elif scale_to_E1 == True:
+        error_file = open('../output/errors_scale_to_E1.txt','w')
+    elif scale_to_E1_E4_E5 == True:
+        error_file = open('../output/errors_scale_to_E1_E4_E5.txt','w')
+    elif scale_to_P1_P2 == True:
+        error_file = open('../output/errors_scale_to_P1_P2.txt','w')
+    
     for i in year:
         if i == '2008':
             observations = [('078','079'), ('149','150'), ('156','157')]
-            #observations = [('078','079')]
+            #observations = [('156','157')]
         else:
             observations = [('086','087'),('277','278')]
         for j in observations:
             print(j)
+            error_file.write(str(j)+'\n')
             wavelengths = [350,450,550,650,750,850,950]
             colours = ['y','b','c','g','m','r','k']
             average_signal = []
@@ -95,9 +105,9 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                         plt.plot(phase_angle,signal, color = colours[idx]) 
                         
                 elif scale_to_E1_E4_E5 == True:
-                    if i == '2008': # loop trhough E1,E4,E5 to get the data for the Lambert phase
+                    if i =='2008':
                         albedo_list = []
-                        for l in observations:
+                        for l in observations: # loop through E1,E4,E5 to get the data for the Lambert phase
                             filepath_temp = r'../output/'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
                             if l[0] == '149':
                                 filepath_temp = r'../output/RADREV_'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
@@ -113,12 +123,14 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                         plt.plot(phase_angle,signal, color = colours[idx]) 
                 
                 elif scale_to_P1_P2 == True:
-                    if i == '2009': # loop trhough P1,P2 to get the data for the Lambert phase
+                    if i =='2008': # don't want to loop trough it twice for no reason
+                        year_temp = '2009' 
                         albedo_list = []
-                        for l in observations:
-                            filepath_temp = r'../output/'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                        observations_temp = [('086','087'),('277','278')]
+                        for l in observations_temp: # loop trhough P1,P2 to get the data for the Lambert phase
+                            filepath_temp = r'../output/'+year_temp+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
                             if l[0] == '086':
-                                filepath_temp = r'../output/RADREV_'+i+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
+                                filepath_temp = r'../output/RADREV_'+year_temp+'_'+l[0]+'_'+l[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
                             epoxi_data_filter_temp = pd.read_pickle(filepath_temp)
                             phase_angles_obs_temp = epoxi_data_filter_temp['phase_angle']
                             scaled_signal_temp = epoxi_data_filter_temp['scaled signal']*pixel_solid_angle
@@ -136,6 +148,8 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                 mean_error = np.mean(error)
                 std_error = np.std(error)
                 print(k,'mean error',mean_error,'std error', std_error)
+                L = [str(k),' mean error ',str(mean_error),' std error ', str(std_error), '\n']
+                error_file.writelines(L)
                 
                 lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs, dtype=np.float64))
                 geometric_albedo = scaled_signal * 1/(list_wl[idx]*lamber_phase_func_alpha)
@@ -149,6 +163,8 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
             if j[0]=='078':
                 fig.legend(['350','450','550','650','750','850','950'], loc = 'lower left')
     
+    error_file.close()
+    
     fig.text(58,1e-7,'EarthObs1',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
     fig.text(75,4e-7,'EarthObs4',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
     fig.text(76.6,0.7e-7,'EarthObs5',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
@@ -158,7 +174,8 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
     ax.set_xlim(0,90)
     ax.set_ylim(0,5.5e-7)
     ax.set_ylabel('scaled signal W/$m^2$/$\mu m$')
-    ax.set_xlabel('phase angle')
+    ax.set_xlabel('phase angle') 
+    
     return np.array(geometric_albedo_list)
 
 mallama = False
@@ -171,9 +188,9 @@ year = ['2008','2009']
 
 list_wl = [SOLAR_350,SOLAR_450,SOLAR_550,SOLAR_650,SOLAR_750,SOLAR_850,SOLAR_950]
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    geometric_albedo = phase_curve(year, list_wl, scale_to_E1=True)
+    geometric_albedo = phase_curve(year, list_wl, scale_to_P1_P2=True)
 
-#%%    
+#%%   BELOW THIS NOT IMPORTANT 
 averages = np.array(averages_signal_obs)
 omega = np.zeros(averages.shape)
 list_wl = [SOLAR_350,SOLAR_450,SOLAR_550,SOLAR_650,SOLAR_750,SOLAR_850,SOLAR_950]

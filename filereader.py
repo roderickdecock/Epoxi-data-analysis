@@ -215,12 +215,14 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
     # MAIN
     ### Get filepath of all fit files and access all files one by one
     # * causes it to access every file within the folder
-    for filepath in glob.iglob(r'../../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/'+folder+'/'+year+'/'+observations+'/*.fit'): #### manually change this and the save at the bottom
+    for filepath in glob.iglob(r'../../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/'+folder+'/'+year+'/'+observations+'/*.fit'):
     # for filepath in glob.iglob(r'./verification/*.fit'): ### verification
     #for filepath in glob.iglob(r'../DATA/dif-e-hriv-3_4-epoxi-earth-v2.0/data/rad/2008/078/*.fit'):   
         print(filepath)
         fits_inf = fits.open(filepath)
-        #fits_inf.info()  ################################ NAN values not filtered out for flags and snr and destripe
+        #fits_inf.info()  
+        ### NAN values not filtered out for flags and snr and destripe
+        # np.nan_to_num(fits_inf[1].data, nan = 1.0) can be used for image_flags
         image_prim = np.nan_to_num(rotate_image(fits_inf[0].data)) # Rotate the image to get North up, 90 deg CW !!!CHECK IF THIS IS NORTH UP OR SOUTH UP!!!
         image_flags = rotate_image(fits_inf[1].data) # Order should be the same for all visible light files 
         # image_snr = rotate_image(fits_inf[2].data)
@@ -344,7 +346,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         epoxi_hrivis['image'] = image_prim
         epoxi_hrivis['weight'] = weight
       
-        epoxi_hrivis['naxis1']        = image_prim_header['NAXIS1']
+        epoxi_hrivis['naxis1']      = image_prim_header['NAXIS1']
         epoxi_hrivis['naxis2']      =  image_prim_header['NAXIS2']
     
         epoxi_hrivis['file'] = image_prim_header['FILESDC']      # image file name
@@ -389,6 +391,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         # [W Longitude, latitude] of sub-spacecraft and sub-Solar points.
         # The header actually stores East longitude and thus must be converted
         # by subtraction from 360 degrees.
+        # nom is also kept as REC sometimes has nan values (-1399,-999)
     
         epoxi_hrivis['sub_SC']       = [360 - image_prim_header['RECSCLON'], image_prim_header['RECSCLAT']]
         epoxi_hrivis['sub_SC_nom']       = [360 - image_prim_header['NOMSCLON'], image_prim_header['NOMSCLAT']]
