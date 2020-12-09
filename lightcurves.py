@@ -386,6 +386,10 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     # CONSTANT
     pixel_solid_angle = 2.0e-06 * 2.0e-06
 
+    # The uncertainty in conversion to absolute
+    # radiometric units is estimated to be 5% for HRI except for the 950-nm
+    # filter, where the uncertainty is ~10%.    -email Lori Feaga 07.12.2020
+
     df = lightcurves_plot(year, observations, wavelengths, colours, pixel_solid_angle)
     
 

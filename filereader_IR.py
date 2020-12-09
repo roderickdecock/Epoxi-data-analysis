@@ -164,7 +164,7 @@ def epoxi_ir_read(folder,year,observations, astronomical_unit = 149.597870691e06
 
 #%%
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_ir_read('rad','2008','150')
+    df = epoxi_ir_read('rad','2009','278')
 
 
 

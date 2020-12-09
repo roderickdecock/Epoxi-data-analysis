@@ -3,6 +3,9 @@
 Created on Tue Nov 17 10:48:58 2020
 
 @author: roder
+
+CODE ADAPTED FROM EXISTING CODE BY DR. TIMOTHY A. LIVENGOOD
+COPIED COMMENTS/CODE IS NOT EXPLICITELY REFERENCED
 """
 import numpy as np  # for calculations
 import matplotlib.pyplot as plt  # for plot
@@ -143,9 +146,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     observations = ['078','079'] 
     #observations = ['149','150'] 
     #observations = ['156','157'] 
-    #year = '2009'
+    year = '2009'
     #observations = ['086','087'] 
-    #observations = ['277','278']
+    observations = ['277','278']
     
     for idx,i in enumerate(observations):
         epoxi_data_temp = pd.read_hdf('../output/IR_RAD_'+year+'_'+i+'_dictionary_info.h5')
