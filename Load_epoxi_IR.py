@@ -92,13 +92,14 @@ def load_epoxi_IR(year,observations,background_frames = [3,4,8],signal_frames = 
         epoxi_temp['spec_delta_wave'] = list(spec_delta_wave_arr /naxis2)
         epoxi_temp['spec_snr']  = list(np.sqrt(spec_snr_arr))   
         
-        mask_short = np.where(np.array(epoxi_temp['spec_wave'].tolist())<2.7*128)
+        spec_wave_arr_mask = np.array(epoxi_temp['spec_wave'].tolist())
+        mask_short = np.where(np.logical_and(spec_wave_arr_mask<=2.7*128, spec_wave_arr_mask >=1.05*128))
         mask_short = zip(mask_short[0],mask_short[1])
         for i in mask_short:
             # add image*delta, all rows of the corresponding column
             # To get the cross-dispersion (parallel to slit) distribution of signal.
             epoxi_temp.at[i[0],'cross_short'] +=  epoxi_temp.at[i[0],'image'][:,i[1]] * epoxi_temp.at[i[0],'delta_wave'][:,i[1]]
-        mask_long = np.where(np.array(epoxi_temp['spec_wave'].tolist())>2.7*128)
+        mask_long = np.where(np.logical_and(spec_wave_arr_mask>=2.7*128, spec_wave_arr_mask <=4.6*128))
         mask_long = zip(mask_long[0],mask_long[1])
         for i in mask_long:
             epoxi_temp.at[i[0],'cross_long'] +=  epoxi_temp.at[i[0],'image'][:,i[1]] * epoxi_temp.at[i[0],'delta_wave'][:,i[1]]
@@ -109,6 +110,14 @@ def load_epoxi_IR(year,observations,background_frames = [3,4,8],signal_frames = 
     combined_spec_snr_arr = np.array(combined_spec_snr_list)
     combined_spec['image'] = list(np.sum(combined_spec_arr,axis = 0)) 
     combined_spec['snr'] = list(np.sqrt(np.sum(combined_spec_snr_arr*combined_spec_snr_arr,axis = 0))) # squared sum, then sqrt
+    
+    #### bright blok on signal_frames row 2,3 col 123,124 in EarthObs1
+    # manually fix it by setting it equal to the column next to it
+    for i in np.arange(combined_spec.shape[0]):
+        image_loc = combined_spec.at[i,'image'] 
+        image_loc[2:4,123] = image_loc[2:4,122]
+        image_loc[2:4,124] = image_loc[2:4,125]
+        combined_spec.at[i,'image']  = image_loc
     
     naxis2 = combined_spec.at[0,'naxis2']
     spec_arr = np.zeros((78,512))
@@ -126,17 +135,18 @@ def load_epoxi_IR(year,observations,background_frames = [3,4,8],signal_frames = 
     combined_spec['spec_delta_wave'] = list(spec_delta_wave_arr /naxis2)
     combined_spec['spec_snr']  = list(np.sqrt(spec_snr_arr))   
     
-    mask_short = np.where(np.array(combined_spec['spec_wave'].tolist())<2.7*128)
+    spec_wave_arr_mask = np.array(combined_spec['spec_wave'].tolist())
+    mask_short = np.where(np.logical_and(spec_wave_arr_mask<=2.7*128, spec_wave_arr_mask >=1.05*128))
     mask_short = zip(mask_short[0],mask_short[1])
     for i in mask_short:
         # add image*delta, all rows of the corresponding column
         # To get the cross-dispersion (parallel to slit) distribution of signal.
         combined_spec.at[i[0],'cross_short'] +=  combined_spec.at[i[0],'image'][:,i[1]] * combined_spec.at[i[0],'delta_wave'][:,i[1]]
-    mask_long = np.where(np.array(combined_spec['spec_wave'].tolist())>2.7*128)
+    mask_long = np.where(np.logical_and(spec_wave_arr_mask>=2.7*128, spec_wave_arr_mask <=4.6*128))
     mask_long = zip(mask_long[0],mask_long[1])
     for i in mask_long:
         combined_spec.at[i[0],'cross_long'] +=  combined_spec.at[i[0],'image'][:,i[1]] * combined_spec.at[i[0],'delta_wave'][:,i[1]]
-    combined_spec.to_pickle('../output/IR_RAD_'+year+'_'+observations[0]+'_'+observations[1]+'_combined_spec''.pkl')
+    combined_spec.to_pickle('../output/IR_RAD_'+year+'_'+observations[0]+'_'+observations[1]+'_combined_spec_box_fixed.pkl')
     return 
 
 #%%    
@@ -146,9 +156,9 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     observations = ['078','079'] 
     #observations = ['149','150'] 
     #observations = ['156','157'] 
-    year = '2009'
+    #year = '2009'
     #observations = ['086','087'] 
-    observations = ['277','278']
+    #observations = ['277','278']
     
     for idx,i in enumerate(observations):
         epoxi_data_temp = pd.read_hdf('../output/IR_RAD_'+year+'_'+i+'_dictionary_info.h5')

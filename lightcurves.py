@@ -211,7 +211,7 @@ def update_signal(epoxi_data_filter, moon=False):
         width_trim = 6 # should correspond to the width trim that was originally applied
         image_prim = epoxi_data_filter.at[i,'image'][width_trim:512-width_trim,width_trim:512-width_trim] # elimanating the zeros at the edge
         weight = epoxi_data_filter.at[i,'weight'][width_trim:512-width_trim,width_trim:512-width_trim]
-        med_image = ndim.medfilt(image_prim*weight,3)
+        med_image = ndim.median_filter(image_prim*weight,3)
         
         aper_radius = np.minimum(1.01*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) #*1.01, *1.5 for EarthObs4
         aper_finish = np.minimum(4.0*epoxi_data_filter.at[i,'earth_radius_pxl'],image_prim.shape[0]) 
@@ -223,9 +223,9 @@ def update_signal(epoxi_data_filter, moon=False):
             moon_centroid_loc = moon_centroids[i,:]
             if np.sqrt(np.sum((moon_centroid_loc-centre)**2)) >= aper_radius:
                 # new med image is the image without the Moon
-                moon_signal, moon_final, med_image, moon_annulus_radius = aper_photom(med_image, centre = moon_centroid_loc, radius = aper_radius*0.27)
+                moon_signal, moon_final, med_image = aper_photom(med_image, centre = moon_centroid_loc, radius = aper_radius*0.27)
         while done == False:
-            signal_aperture, final, patch, annulus_radius  = aper_photom(med_image, centre = centre, radius = aper_radius)
+            signal_aperture, final, patch  = aper_photom(med_image, centre = centre, radius = aper_radius)
             
             # centre_adjusted = centre + 255.5
             # aperture = CircularAperture(centre_adjusted, r=aper_radius)
@@ -318,8 +318,8 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
     plt.figure() #is here when using all wavelengths, messes up when plotting in update signal
     idx = 0
     for i in wavelengths:
-        #filepath = r'../output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
-        filepath = r'../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
+        filepath = r'../output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
+        #filepath = r'../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
         epoxi_data_filter = pd.read_pickle(filepath)
         if observations == ['149','150']:
             epoxi_data_filter = update_signal(epoxi_data_filter, moon=True)
@@ -357,7 +357,7 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
         ####################################################
         ### SAVING IS OFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #epoxi_data_filter.to_pickle('../output/'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
-        epoxi_data_filter.to_pickle('../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
+        #epoxi_data_filter.to_pickle('../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_'+'df_epoxi_data_filtered_'+str(i)+'.pkl')
     plt.title('AAAAAA') ###################### change manually
     plt.xlabel('Central Meridian (West Longtitude)')
     plt.ylabel('Normalised signal')
@@ -372,12 +372,12 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
 
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
-    #year = '2008'
-    year = '2009'
-    #observations = ['078','079'] 
+    year = '2008'
+    #year = '2009'
+    observations = ['078','079'] 
     #observations = ['149','150'] 
     #observations = ['156','157'] 
-    observations = ['086','087']
+    #observations = ['086','087']
     #observations = ['277','278']
     
     wavelengths = [350,450,550,650,750,850,950]

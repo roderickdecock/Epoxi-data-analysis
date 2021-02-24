@@ -207,8 +207,6 @@ def aper_photom(image, centre = None,radius = None ):
 
 #%%
 
-
-
 def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_background,\
                    min_aperature,max_aperature,width_trim, astronomical_unit = 149.597870691e06):
     df = pd.DataFrame()
@@ -430,7 +428,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         aper_diam = np.min([aper_start*1.5,image_prim.shape[0],image_prim.shape[1]]) # *1.5 here
         
         if aper_start >0: 
-            signal_aperture, final, patch, annulus_radius  = aper_photom(image_prim, centre = centroid,radius = aper_diam*0.5)
+            signal_aperture, final, patch  = aper_photom(image_prim, centre = centroid,radius = aper_diam*0.5)
         else:
             patch = image_prim*0 + np.sum(image_prim)/np.float(image_prim.size)
         test = image_prim - patch  
@@ -472,7 +470,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
             done = False
             prev_signal = 0
             while done == False:
-                signal_aperture, final, patch, annulus_radius  = aper_photom(med_image, centre = centroid, radius = aper_diam*0.5)
+                signal_aperture, final, patch  = aper_photom(med_image, centre = centroid, radius = aper_diam*0.5)
                 ### figure
                 # fig2, ax2 = plt.subplots()
                 # plt.title('Median data')
@@ -520,9 +518,9 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         # plt.scatter(centroid[0]+255.5, centroid[1]+255.5, s=10)
         # plt.colorbar()
         
-        # fig2, ax2 = plt.subplots()
-        # plt.title('Median data')
-        # plt.imshow(med_image, cmap='gray')
+        fig2, ax2 = plt.subplots()
+        plt.title('Polar Observation 2: South')
+        plt.imshow(med_image, cmap='gray')
         # circle1 = plt.Circle(centroid+255.5, aper_diam*0.5, color='r', fill=False, label = 'final aperture')
         # circle2 = plt.Circle(centroid+255.5, aper_diam*0.5/1.05, color='g', fill=False, label = 'previous aperture')
         # circle3 = plt.Circle(centroid+255.5, annulus_radius, color='b', fill=False, label = 'annulus')
@@ -534,7 +532,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         # plt.scatter(255.5, 255.5, s=10, color = 'r', label = 'centre image')
         # plt.scatter(initial_centroid[0]+255.5, initial_centroid[1]+255.5, s=10,color = 'g', label = 'initial centroid')
         # plt.legend()
-        # plt.colorbar()
+        plt.colorbar()
         # ax2.add_artist(leg_1)    
     
         
@@ -546,7 +544,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
         fits_inf.close() 
         ########################################################################## SAVING
 
-    df.to_hdf('../output/RADREV_'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
+    #df.to_hdf('../output/RADREV_'+ filepath.split('/')[-2]+'_'+observations+'_'+'min_aper'+'_'+str(min_aperature)+'_'+'dictionary_info.h5','epoxi_hrivis') ### manually change this
     return df
 ############
 
@@ -564,7 +562,7 @@ def epoxi_vis_read(folder,year,observations,trim_primary,repair_middle,remove_ba
 verification = False
 #%%
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
-    df = epoxi_vis_read('radrev','2009','278',True,True,True,150,0,6)
+    df = epoxi_vis_read('rad','2009','277',True,True,True,150,0,6)
     # No difference in rad and radrev as far as I can see
 
 # df = pd.DataFrame()

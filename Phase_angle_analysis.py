@@ -10,6 +10,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt  # for plot
 
+#from pylab import legend, gca
+
 #%%
 
 earth_diam = 1.2756e04         #Earth diameter in km
@@ -17,6 +19,7 @@ astronomical_unit = 149.597870691e06 # km
 
 # Values from ASTM 2000 Standard Extraterrestrial Spectrum Reference E-490-00
 # Values retrieved by Dr. Livengood
+# These values are adpated for the wavelength range of the instrument
 SOLAR_350 = 1.033249e+03  #W/m^2/um at 1 AU from Sun
 SOLAR_450 = 1.878244e+03  #W/m^2/um at 1 AU from Sun
 SOLAR_550 = 1.850052e+03  #W/m^2/um at 1 AU from Sun
@@ -39,6 +42,7 @@ distance = 1*astronomical_unit
 solid_angle = 2.0e-06 * 2.0e-06
 
 phase_angle = np.arange(0,91,1)
+#phase_angle = np.arange(0,181,1)
 
 # ill_frac = 0.5*(1 + np.cos(np.deg2rad(phase_angle)))
 lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
@@ -57,6 +61,7 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
     averages_reflectance_obs = []
     geometric_albedo_list = []
     geometric_albedo_std_list = []
+    geometric_albedo_avg_list = []
     
     if mallama == True:
         error_file = open('../output/errors_mallama.txt','w')
@@ -81,11 +86,11 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
             average_signal = []
             average_reflectance = []
             geometric_albedo_temp = []
-            geometric_albedo_temp_std = []
+            geometric_albedo_temp_std = []            
             
             for idx,k in enumerate(wavelengths):
                 filepath = r'../output/'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
-                if j[0] == '149' or j[0]== '086':
+                if j[0] == '149' or j[0]== '086': #using different background method for these observations
                     filepath = r'../output/RADREV_'+i+'_'+j[0]+'_'+j[1]+'_df_epoxi_data_filtered_'+str(k)+'.pkl'
                 epoxi_data_filter = pd.read_pickle(filepath)
                 pixel_solid_angle = 2.0e-06 * 2.0e-06
@@ -95,17 +100,20 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                 #print(np.mean(phase_angles_obs))
                 if mallama ==True:
                     geometric_albedo = 0.2
+                    geometric_albedo_avg_list.append(geometric_albedo)
                     signal = geometric_albedo*lamber_phase_func*list_wl[idx]
                     if j == ('078','079'): #only need to plot this once, the first time
-                        plt.plot(phase_angle,signal, color = colours[idx])  
-                     
+                        plt.plot(phase_angle,signal, color = colours[idx])                      
+                
                 elif scale_to_E1 == True:
-                    if j == ('078','079'):
+                    if j == ('078','079'):                    
                         lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs, dtype=np.float64))
                         geometric_albedo = scaled_signal * 1/(list_wl[idx]*lamber_phase_func_alpha)
                         geometric_albedo_avg = np.mean(geometric_albedo)
+                        geometric_albedo_avg_list.append(geometric_albedo_avg)
                         signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
-                        plt.plot(phase_angle,signal, color = colours[idx]) 
+                        plt.plot(phase_angle,signal, color = colours[idx])
+                        #print(signal[0],signal[5],signal[10])                         
                         
                 elif scale_to_E1_E4_E5 == True:
                     if i =='2008':
@@ -122,6 +130,7 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                             geometric_albedo = scaled_signal_temp * 1/(list_wl[idx]*lamber_phase_func_alpha)
                             albedo_list.append(geometric_albedo)
                         geometric_albedo_avg = np.mean(albedo_list)
+                        geometric_albedo_avg_list.append(geometric_albedo_avg)
                         signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
                         plt.plot(phase_angle,signal, color = colours[idx]) 
                 
@@ -142,13 +151,21 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                             geometric_albedo = scaled_signal_temp * 1/(list_wl[idx]*lamber_phase_func_alpha)
                             albedo_list.append(geometric_albedo)
                         geometric_albedo_avg = np.mean(albedo_list)
+                        geometric_albedo_avg_list.append(geometric_albedo_avg)
                         signal = geometric_albedo_avg*lamber_phase_func*list_wl[idx]
                         plt.plot(phase_angle,signal, color = colours[idx]) 
                 else:
                     signal = np.zeros(scaled_signal.shape)
-                    
+                                
+                ####### RECALCULATE FOR SCALE TO MALLAMA, E1_4_5 and P1_P2
+                ### It is working now, recalculate the signal for each wavelength
+                
+                signal = geometric_albedo_avg_list[idx]*lamber_phase_func*list_wl[idx]
+                #print(signal[0],signal[5],signal[10])  
                 error = scaled_signal - signal[avg_phase_angles_obs]
-                mean_error = np.mean(error)
+                mean_error = np.mean(np.abs(error))
+                # standard deviations represent the variation due to the Earth rotation. It is not a representation
+                # of the standard deviation of the error.
                 std_error = np.std(error)
                 #print(k,'mean error',mean_error,'std error', std_error)
                 L = [str(k),' mean error ',str(mean_error),' std error ', str(std_error), '\n']
@@ -166,8 +183,30 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
             geometric_albedo_list.append(geometric_albedo_temp)
             geometric_albedo_std_list.append(geometric_albedo_temp_std)
             if j[0]=='078':
-                fig.legend(['350','450','550','650','750','850','950'], bbox_to_anchor=(0.13, 0.12),loc = 'lower left')
-    
+                # Use the next line as legend
+                #fig.legend(['350','450','550','650','750','850','950'], bbox_to_anchor=(0.13, 0.12),loc = 'lower left')
+                
+                # This is specific for scale_to_E1, to have the wavelength at every line
+                l1 = plt.legend(['350'], loc = 'upper left', bbox_to_anchor=(0, 5.4e-7), bbox_transform = ax.transData)
+                ax.add_artist(l1)
+                l2 = plt.legend(['450'], loc = 'upper left', bbox_to_anchor=(58, 5.5e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l2)
+                l2.get_lines()[0].set_color(colours[1])
+                l3 = plt.legend(['550'], loc = 'upper left', bbox_to_anchor=(34, 5.5e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l3)
+                l3.get_lines()[0].set_color(colours[2])
+                l4 = plt.legend(['650'], loc = 'upper left', bbox_to_anchor=(0, 4.69e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l4)
+                l4.get_lines()[0].set_color(colours[3])
+                l5 = plt.legend(['750'], loc = 'upper left', bbox_to_anchor=(0, 3.95e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l5)
+                l5.get_lines()[0].set_color(colours[4])
+                l6 = plt.legend(['850'], loc = 'upper left', bbox_to_anchor=(0, 3.4e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l6)
+                l6.get_lines()[0].set_color(colours[5])
+                l7 = plt.legend(['950'], loc = 'upper left', bbox_to_anchor=(0, 2.0e-7), bbox_transform = ax.transData) #, bbox_transform = ax.transData
+                ax.add_artist(l7)
+                l7.get_lines()[0].set_color(colours[6])
     error_file.close()
     
     fig.text(58,1e-7,'EarthObs1',  horizontalalignment='center', verticalalignment='center', transform=ax.transData)
@@ -180,9 +219,10 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
     plt.grid(True)
     ax.set_title('Earth\'s phase curve')
     ax.set_xlim(0,90)
+    #ax.fill_between(phase_angle, 0, 1, where=phase_angle > 90,color='grey')
     ax.set_ylim(0,5.5e-7)
     ax.set_ylabel('scaled signal W/$m^2$/$\mu m$')
-    ax.set_xlabel('phase angle') 
+    ax.set_xlabel('phase angle [deg]') 
     
     return np.array(geometric_albedo_list), np.array(geometric_albedo_std_list)
 
