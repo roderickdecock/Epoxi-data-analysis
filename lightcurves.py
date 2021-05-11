@@ -319,7 +319,8 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
     idx = 0
     for i in wavelengths:
         filepath = r'../output/'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
-        #filepath = r'../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
+        if observations == ['149','150'] or observations == ['086','087']: # they have different background subtraction
+            filepath = r'../output/RADREV_'+year+'_'+observations[0]+'_'+observations[1]+'_df_epoxi_data_filtered_'+str(i)+'.pkl'
         epoxi_data_filter = pd.read_pickle(filepath)
         if observations == ['149','150']:
             epoxi_data_filter = update_signal(epoxi_data_filter, moon=True)
@@ -369,16 +370,17 @@ def lightcurves_plot(year,observations,wavelengths,colours, pixel_solid_angle):
 #%%
 ### RERUN  update signal doesn't overwrite anymore with scaled signal
 # 2009 086,087, 277,278
+# EDIT: I think I did this? I redid them anyway
 
 if __name__ == "__main__": # to prevent this code from running when importing functions elsewhere
     # INPUT
-    year = '2008'
-    #year = '2009'
-    observations = ['078','079'] 
+    #year = '2008'
+    year = '2009'
+    #observations = ['078','079'] 
     #observations = ['149','150'] 
     #observations = ['156','157'] 
     #observations = ['086','087']
-    #observations = ['277','278']
+    observations = ['277','278']
     
     wavelengths = [350,450,550,650,750,850,950]
     #wavelengths = [450]
@@ -391,6 +393,6 @@ if __name__ == "__main__": # to prevent this code from running when importing fu
     # filter, where the uncertainty is ~10%.    -email Lori Feaga 07.12.2020
 
     df = lightcurves_plot(year, observations, wavelengths, colours, pixel_solid_angle)
-    
+    ignore_this = True
 
 

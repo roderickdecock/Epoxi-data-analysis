@@ -51,6 +51,10 @@ lamber_phase_func = ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2r
 def lamber_phase_function(phase_angle):
     return ((np.pi - np.abs(np.deg2rad(phase_angle))) * np.cos(np.deg2rad(phase_angle)) + \
                      np.sin(np.abs(np.deg2rad(phase_angle))) )/np.pi
+        
+def lamber_phase_func_sphere(phase_angle):
+    scattering_angle = np.deg2rad(180 - phase_angle)
+    return 8/(3*np.pi) * (np.sin(scattering_angle) - scattering_angle*np.cos(scattering_angle))
     
 #%%
 
@@ -158,17 +162,21 @@ def phase_curve(year,list_wl, mallama = False, scale_to_E1 = False, scale_to_E1_
                     signal = np.zeros(scaled_signal.shape)
                                 
                 ####### RECALCULATE FOR SCALE TO MALLAMA, E1_4_5 and P1_P2
+                ####### RECALCULATE FOR SCALE TO MALLAMA, E1_4_5 and P1_P2 and P_1 with stand_error_mean
                 ### It is working now, recalculate the signal for each wavelength
                 
                 signal = geometric_albedo_avg_list[idx]*lamber_phase_func*list_wl[idx]
                 #print(signal[0],signal[5],signal[10])  
                 error = scaled_signal - signal[avg_phase_angles_obs]
-                mean_error = np.mean(np.abs(error))
+                mean_error = np.mean(np.abs(error))                
                 # standard deviations represent the variation due to the Earth rotation. It is not a representation
                 # of the standard deviation of the error.
                 std_error = np.std(error)
-                #print(k,'mean error',mean_error,'std error', std_error)
-                L = [str(k),' mean error ',str(mean_error),' std error ', str(std_error), '\n']
+                # standard error of the mean, to get an estimate for the error of the mean, so how
+                # accurately the mean represents sample data
+                stand_error_mean = np.std(error, ddof=1) / np.sqrt(np.size(error))
+                #print(k,'mean error',mean_error,'std error', std_error, 'st error mean', stand_error_mean)
+                L = [str(k),' mean error ',str(mean_error),' std error ', str(std_error), ' stand_error_mean ', str(stand_error_mean),  '\n']
                 error_file.writelines(L)
                 
                 lamber_phase_func_alpha = lamber_phase_function(np.array(phase_angles_obs, dtype=np.float64))
